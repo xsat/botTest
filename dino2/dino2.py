@@ -4,26 +4,25 @@ from cv2 import imread, matchTemplate, minMaxLoc, IMREAD_UNCHANGED, TM_CCOEFF_NO
 from numpy import ndarray, array, where
 from pynput.keyboard import Controller, Key
 
-
-GAME_OVER_IMAGE: str = '_game_over.jpg'
-GAME_SCORE_IMAGE: str = '_game_score.jpg'
-BIG_CACTUS_IMAGE: str = '_big_cactus.jpg'
-CACTUS_IMAGE: str = '_cactus.jpg'
-PTERODACTYL_IMAGE: str = '_pterodactyl.jpg'
-DINO_IMAGE: str = '_dino.jpg'
+GAME_OVER_IMAGE: ndarray = imread('_game_over.jpg', IMREAD_UNCHANGED)
+GAME_SCORE_IMAGE: ndarray = imread('_game_score.jpg', IMREAD_UNCHANGED)
+BIG_CACTUS_IMAGE: ndarray = imread('_big_cactus.jpg', IMREAD_UNCHANGED)
+CACTUS_IMAGE: ndarray = imread('_cactus.jpg', IMREAD_UNCHANGED)
+PTERODACTYL_IMAGE: ndarray = imread('_pterodactyl.jpg', IMREAD_UNCHANGED)
+DINO_IMAGE: ndarray = imread('_dino.jpg', IMREAD_UNCHANGED)
 
 
 SUCCESSFUL_MATCHED_PERCENT: float = .8
 
 
-def match_all(filename: str, haystack: ndarray) -> ndarray:
-    img: ndarray = imread(filename, IMREAD_UNCHANGED)
+def match_all(image: ndarray, haystack: ndarray) -> ndarray:
+    # img: ndarray = imread(filename, IMREAD_UNCHANGED)
 
-    return matchTemplate(haystack, img, TM_CCOEFF_NORMED)
+    return matchTemplate(haystack, image, TM_CCOEFF_NORMED)
 
 
-def match_one(filename: str, haystack: ndarray) -> tuple[float, float, float]:
-    result_try: ndarray = match_all(filename, haystack)
+def match_one(image: ndarray, haystack: ndarray) -> tuple[float, float, float]:
+    result_try: ndarray = match_all(image, haystack)
     _, max_val, _, max_loc = minMaxLoc(result_try)
     max_x, max_y = max_loc
 
@@ -59,15 +58,15 @@ def is_need_to_jump(screenshot: ndarray) -> bool:
 
         return None
 
-    def is_close_to_dino(image: str) -> bool:
+    def is_close_to_dino(image: ndarray) -> bool:
         result: ndarray = match_all(image, screenshot) > SUCCESSFUL_MATCHED_PERCENT
         matched_results: ndarray = where(result > SUCCESSFUL_MATCHED_PERCENT)
 
         for y, x in zip(*matched_results):
-            # print(f'x:{x} y:{y}')
-            # print(f'dino_x:{dino_x}dino_y:{dino_y}')
+            print(f'x:{x} y:{y}')
+            print(f'dino_x:{dino_x}dino_y:{dino_y}')
 
-            if x - dino_x < 300:
+            if x - dino_x < 500:
                 return True
 
         return False
@@ -90,8 +89,9 @@ def is_need_to_jump(screenshot: ndarray) -> bool:
 
 def jump(controller: Controller) -> None:
     controller.press(Key.space)
+    # sleep(.01)
     controller.release(Key.space)
-    # print('Jump')
+    print('Jump')
 
 
 def dino2() -> None:
@@ -102,8 +102,10 @@ def dino2() -> None:
         if is_game_over(window_screenshot):
             break
 
-        if is_game_going(window_screenshot) and is_need_to_jump(window_screenshot):
-            jump(game_controller)
+        if is_game_going(window_screenshot):
+            print('game_going')
+            if is_need_to_jump(window_screenshot):
+                jump(game_controller)
 
 
 if __name__ == '__main__':
