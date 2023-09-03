@@ -9,6 +9,7 @@ GAME_OVER_IMAGE: str = '_game_over.jpg'
 GAME_SCORE_IMAGE: str = '_game_score.jpg'
 BIG_CACTUS_IMAGE: str = '_big_cactus.jpg'
 CACTUS_IMAGE: str = '_cactus.jpg'
+PTERODACTYL_IMAGE: str = '_pterodactyl.jpg'
 DINO_IMAGE: str = '_dino.jpg'
 
 
@@ -62,16 +63,12 @@ def is_need_to_jump(screenshot: ndarray) -> bool:
         result: ndarray = match_all(image, screenshot) > SUCCESSFUL_MATCHED_PERCENT
         matched_results: ndarray = where(result > SUCCESSFUL_MATCHED_PERCENT)
 
-        for x, y in zip(*matched_results):
-            pass
-            # print(x, y)
-            #
-            # print(dino_x, dino_y)
+        for y, x in zip(*matched_results):
+            # print(f'x:{x} y:{y}')
+            # print(f'dino_x:{dino_x}dino_y:{dino_y}')
 
-            # print(dino_x - x, x  dino2 - dino_x)
-            # print(dino_y, y, y - dino_y, y - dino_y < 750)
-            # if y - dino_y < 750:
-            #     return True
+            if x - dino_x < 300:
+                return True
 
         return False
 
@@ -85,12 +82,16 @@ def is_need_to_jump(screenshot: ndarray) -> bool:
         if is_close_to_dino(BIG_CACTUS_IMAGE):
             return True
 
+        if is_close_to_dino(PTERODACTYL_IMAGE):
+            return True
+
     return False
 
 
 def jump(controller: Controller) -> None:
     controller.press(Key.space)
     controller.release(Key.space)
+    # print('Jump')
 
 
 def dino2() -> None:
@@ -98,16 +99,11 @@ def dino2() -> None:
 
     while True:
         window_screenshot = make_screenshot()
-        # if is_game_over(window_screenshot):
-        #     print('Game over')
-        #     break
+        if is_game_over(window_screenshot):
+            break
 
-        if is_game_going(window_screenshot):
-            # print('Game is going')
-
-            if is_need_to_jump(window_screenshot):
-                # print('Jumping')
-                jump(game_controller)
+        if is_game_going(window_screenshot) and is_need_to_jump(window_screenshot):
+            jump(game_controller)
 
 
 if __name__ == '__main__':
