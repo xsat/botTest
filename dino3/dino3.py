@@ -16,57 +16,6 @@ DINO_IMAGE: ndarray = imread('_dino.jpg', IMREAD_UNCHANGED)
 SUCCESSFUL_MATCHED_PERCENT: float = .8
 
 
-def is_need_to_jump(screenshot: ndarray, find_image: ndarray) -> bool:
-    def match_all(image: ndarray, haystack: ndarray) -> ndarray:
-        return matchTemplate(haystack, image, TM_CCOEFF_NORMED)
-
-    def match_one(image: ndarray, haystack: ndarray) -> tuple[float, float, float]:
-        result_try: ndarray = match_all(image, haystack)
-        _, max_val, _, max_loc = minMaxLoc(result_try)
-        max_x, max_y = max_loc
-
-        return max_x, max_y, max_val
-
-    def get_dino() -> tuple[float, float] | None:
-        max_x, max_y, matched_percent = match_one(DINO_IMAGE, screenshot)
-        if matched_percent > SUCCESSFUL_MATCHED_PERCENT:
-            return max_x, max_y
-
-        return None
-
-    def is_close_to_dino(image: ndarray) -> bool:
-        result: ndarray = match_all(image, screenshot) > SUCCESSFUL_MATCHED_PERCENT
-        matched_results: ndarray = where(result > SUCCESSFUL_MATCHED_PERCENT)
-
-        for y, x in zip(*matched_results):
-            if x - dino_x < 400:
-                # print(f'x:{x} y:{y}')
-                # print(f'dino_x:{dino_x} dino_y:{dino_y}')
-
-                return True
-
-        return False
-
-    dino = get_dino()
-
-    # print(dino)
-    if dino is None:
-        return False
-
-    dino_x, dino_y = dino
-
-    return is_close_to_dino(find_image)
-
-
-def make_screenshot() -> ndarray:
-    base = mss()
-    monitor = (0, 0, 1920, 1080)
-    screenshot = base.grab(monitor)
-    screenshot_array = array(screenshot)
-
-    return cvtColor(screenshot_array, IMREAD_COLOR)
-
-
 def dino3() -> None:
     def execute_jump(queue: Queue) -> None:
         jump_controller: Controller = Controller()
@@ -85,11 +34,60 @@ def dino3() -> None:
             # print(f'execute_jump is %s seconds' % (time() - start_time))
 
     def find_jump_cases(queue: Queue, find_image: ndarray, image_name: str) -> None:
+        def make_screenshot() -> ndarray:
+            base = mss()
+            monitor = (0, 0, 1920, 1080)
+            screenshot = base.grab(monitor)
+            screenshot_array = array(screenshot)
+
+            return cvtColor(screenshot_array, IMREAD_COLOR)
+
+        def is_need_to_jump(screenshot: ndarray, find_image: ndarray) -> bool:
+            def match_all(image: ndarray, haystack: ndarray) -> ndarray:
+                return matchTemplate(haystack, image, TM_CCOEFF_NORMED)
+
+            def match_one(image: ndarray, haystack: ndarray) -> tuple[float, float, float]:
+                result_try: ndarray = match_all(image, haystack)
+                _, max_val, _, max_loc = minMaxLoc(result_try)
+                max_x, max_y = max_loc
+
+                return max_x, max_y, max_val
+
+            def get_dino() -> tuple[float, float] | None:
+                max_x, max_y, matched_percent = match_one(DINO_IMAGE, screenshot)
+                if matched_percent > SUCCESSFUL_MATCHED_PERCENT:
+                    return max_x, max_y
+
+                return None
+
+            def is_close_to_dino(image: ndarray) -> bool:
+                result: ndarray = match_all(image, screenshot) > SUCCESSFUL_MATCHED_PERCENT
+                matched_results: ndarray = where(result > SUCCESSFUL_MATCHED_PERCENT)
+
+                for y, x in zip(*matched_results):
+                    if x - dino_x < 400:
+                        # print(f'x:{x} y:{y}')
+                        # print(f'dino_x:{dino_x} dino_y:{dino_y}')
+
+                        return True
+
+                return False
+
+            dino = get_dino()
+
+            # print(dino)
+            if dino is None:
+                return False
+
+            dino_x, dino_y = dino
+
+            return is_close_to_dino(find_image)
+
         while True:
             # start_time: float = time()
-            screenshot: ndarray = make_screenshot()
+            jump_screenshot: ndarray = make_screenshot()
 
-            if is_need_to_jump(screenshot, find_image):
+            if is_need_to_jump(jump_screenshot, find_image):
                 queue.put(True)
                 queue.task_done()
 
